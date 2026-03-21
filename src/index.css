@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    background-color: #F7F7F7;
+    color: #222222;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+

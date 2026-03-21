@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /thumbnails/{uid}/{fileName} {
+      // 誰でも読み取り可能
+      allow read: if true;
+      // 書き込みはログインしており、かつ自分のフォルダ(uid)であること
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
