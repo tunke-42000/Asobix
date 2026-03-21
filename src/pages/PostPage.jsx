@@ -8,11 +8,22 @@ import Layout from '../components/Layout'
 import GameForm from '../components/GameForm'
 
 async function uploadThumbnail(file, userId) {
-  const ext = file.name.split('.').pop()
-  const path = `thumbnails/${userId}/${Date.now()}.${ext}`
-  const storageRef = ref(storage, path)
-  await uploadBytes(storageRef, file)
-  return await getDownloadURL(storageRef)
+  if (!userId) {
+    throw new Error('ログインしていません。投稿にはログインが必要です。')
+  }
+  try {
+    const ext = file.name.split('.').pop()
+    const path = `thumbnails/${userId}/${Date.now()}.${ext}`
+    const storageRef = ref(storage, path)
+    // uploadBytes でアップロード
+    const snapshot = await uploadBytes(storageRef, file)
+    // アップロード結果の ref を使って URL を取得
+    const downloadUrl = await getDownloadURL(snapshot.ref)
+    return downloadUrl
+  } catch (error) {
+    console.error('画像アップロードに失敗しました:', error.code, error.message)
+    throw new Error(`画像のアップロード処理でエラーが発生しました。(${error.code || 'unknown'})`)
+  }
 }
 
 export default function PostPage() {
@@ -22,8 +33,14 @@ export default function PostPage() {
   const [submitError, setSubmitError] = useState('')
 
   async function handleSubmit({ form, thumbnailFile }) {
+    if (!user || !user.uid) {
+      setSubmitError('ログインセッションが有効ではありません。')
+      return
+    }
+
     setLoading(true)
     setSubmitError('')
+    
     try {
       let thumbnailUrl = null
       if (thumbnailFile) {
@@ -48,8 +65,9 @@ export default function PostPage() {
 
       navigate('/mypage')
     } catch (err) {
-      console.error(err)
+      console.error('Game Post Error:', err)
       setSubmitError(err.message || '投稿に失敗しました。もう一度お試しください。')
+    } finally {
       setLoading(false)
     }
   }
@@ -61,7 +79,7 @@ export default function PostPage() {
         <p className="text-sm text-gray-500 mb-8">あなたのゲームをみんなに紹介しましょう</p>
 
         {submitError && (
-          <div className="mb-4 px-4 py-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+          <div className="mb-4 px-4 py-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 whitespace-pre-wrap">
             {submitError}
           </div>
         )}
@@ -71,4 +89,5 @@ export default function PostPage() {
     </Layout>
   )
 }
+
 

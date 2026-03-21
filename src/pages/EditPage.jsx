@@ -8,11 +8,20 @@ import Layout from '../components/Layout'
 import GameForm from '../components/GameForm'
 
 async function uploadThumbnail(file, userId) {
-  const ext = file.name.split('.').pop()
-  const path = `thumbnails/${userId}/${Date.now()}.${ext}`
-  const storageRef = ref(storage, path)
-  await uploadBytes(storageRef, file)
-  return await getDownloadURL(storageRef)
+  if (!userId) {
+    throw new Error('ログインしていません。画像のアップロードにはログインが必要です。')
+  }
+  try {
+    const ext = file.name.split('.').pop()
+    const path = `thumbnails/${userId}/${Date.now()}.${ext}`
+    const storageRef = ref(storage, path)
+    const snapshot = await uploadBytes(storageRef, file)
+    const downloadUrl = await getDownloadURL(snapshot.ref)
+    return downloadUrl
+  } catch (error) {
+    console.error('画像アップロードに失敗しました:', error.code, error.message)
+    throw new Error(`画像のアップロード処理でエラーが発生しました。(${error.code || 'unknown'})`)
+  }
 }
 
 export default function EditPage() {
@@ -53,8 +62,14 @@ export default function EditPage() {
   }, [id, user, navigate])
 
   async function handleSubmit({ form, thumbnailFile }) {
+    if (!user || !user.uid) {
+      setSubmitError('ログインセッションが有効ではありません。')
+      return
+    }
+
     setLoading(true)
     setSubmitError('')
+    
     try {
       let thumbnailUrl = game.thumbnailUrl
       if (thumbnailFile) {
@@ -76,8 +91,9 @@ export default function EditPage() {
 
       navigate('/mypage')
     } catch (err) {
-      console.error(err)
+      console.error('Game Update Error:', err)
       setSubmitError(err.message || '保存に失敗しました。もう一度お試しください。')
+    } finally {
       setLoading(false)
     }
   }
@@ -99,7 +115,7 @@ export default function EditPage() {
         <p className="text-sm text-gray-500 mb-8">投稿情報を更新できます</p>
 
         {submitError && (
-          <div className="mb-4 px-4 py-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+          <div className="mb-4 px-4 py-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 whitespace-pre-wrap">
             {submitError}
           </div>
         )}
@@ -114,4 +130,5 @@ export default function EditPage() {
     </Layout>
   )
 }
+
 

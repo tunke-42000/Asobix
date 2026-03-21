@@ -24,7 +24,7 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await signUp(form.email, form.password, form.username)
-      navigate('/')
+      navigate('/mypage')
     } catch (err) {
       setError(err.message || '登録に失敗しました')
     } finally {

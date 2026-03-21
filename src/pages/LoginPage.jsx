@@ -23,7 +23,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await signIn(form.email, form.password)
-      navigate('/')
+      navigate('/mypage')
     } catch (err) {
       setError('メールアドレスまたはパスワードが正しくありません')
     } finally {
