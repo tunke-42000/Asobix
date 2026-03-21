@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { db, storage } from '../lib/firebase'
+// [TEMPORARILY DISABLED] Storage
+// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db } from '../lib/firebase'
 import { useAuth } from '../context/AuthContext'
 import Layout from '../components/Layout'
 import GameForm from '../components/GameForm'
 
+// [TEMPORARILY DISABLED] Storage Upload: Firebase料金プラン制約のため一時停止。Blazeプラン移行時に以下を有効化してください。
+/*
 async function uploadThumbnail(file, userId) {
   if (!userId) {
     throw new Error('ログインしていません。投稿にはログインが必要です。')
@@ -15,9 +18,7 @@ async function uploadThumbnail(file, userId) {
     const ext = file.name.split('.').pop()
     const path = `thumbnails/${userId}/${Date.now()}.${ext}`
     const storageRef = ref(storage, path)
-    // uploadBytes でアップロード
     const snapshot = await uploadBytes(storageRef, file)
-    // アップロード結果の ref を使って URL を取得
     const downloadUrl = await getDownloadURL(snapshot.ref)
     return downloadUrl
   } catch (error) {
@@ -25,6 +26,7 @@ async function uploadThumbnail(file, userId) {
     throw new Error(`画像のアップロード処理でエラーが発生しました。(${error.code || 'unknown'})`)
   }
 }
+*/
 
 export default function PostPage() {
   const { user, profile } = useAuth()
@@ -43,9 +45,11 @@ export default function PostPage() {
     
     try {
       let thumbnailUrl = null
-      if (thumbnailFile) {
-        thumbnailUrl = await uploadThumbnail(thumbnailFile, user.uid)
-      }
+      
+      // [TEMPORARILY DISABLED] Storage Upload: 画像処理一時停止中
+      // if (thumbnailFile) {
+      //   thumbnailUrl = await uploadThumbnail(thumbnailFile, user.uid)
+      // }
 
       const docRef = collection(db, 'games')
       await addDoc(docRef, {

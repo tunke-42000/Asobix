@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { db, storage } from '../lib/firebase'
+// [TEMPORARILY DISABLED] Storage
+// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db } from '../lib/firebase'
 import { useAuth } from '../context/AuthContext'
 import Layout from '../components/Layout'
 import GameForm from '../components/GameForm'
 
+// [TEMPORARILY DISABLED] Storage Upload: Firebase料金プラン制約のため一時停止。Blazeプラン移行時に以下を有効化してください。
+/*
 async function uploadThumbnail(file, userId) {
   if (!userId) {
     throw new Error('ログインしていません。画像のアップロードにはログインが必要です。')
@@ -23,6 +26,7 @@ async function uploadThumbnail(file, userId) {
     throw new Error(`画像のアップロード処理でエラーが発生しました。(${error.code || 'unknown'})`)
   }
 }
+*/
 
 export default function EditPage() {
   const { id } = useParams()
@@ -71,10 +75,12 @@ export default function EditPage() {
     setSubmitError('')
     
     try {
-      let thumbnailUrl = game.thumbnailUrl
-      if (thumbnailFile) {
-        thumbnailUrl = await uploadThumbnail(thumbnailFile, user.uid)
-      }
+      let thumbnailUrl = game.thumbnailUrl || null
+      
+      // [TEMPORARILY DISABLED] Storage Upload: 画像処理一時停止中
+      // if (thumbnailFile) {
+      //   thumbnailUrl = await uploadThumbnail(thumbnailFile, user.uid)
+      // }
 
       const docRef = doc(db, 'games', id)
       await updateDoc(docRef, {
