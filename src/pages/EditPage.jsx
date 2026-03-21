@@ -1,32 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-// [TEMPORARILY DISABLED] Storage
-// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { db } from '../lib/firebase'
+import { gameService } from '../services/gameService'
+import { storageService } from '../services/storageService'
 import { useAuth } from '../context/AuthContext'
 import Layout from '../components/Layout'
 import GameForm from '../components/GameForm'
-
-// [TEMPORARILY DISABLED] Storage Upload: Firebase料金プラン制約のため一時停止。Blazeプラン移行時に以下を有効化してください。
-/*
-async function uploadThumbnail(file, userId) {
-  if (!userId) {
-    throw new Error('ログインしていません。画像のアップロードにはログインが必要です。')
-  }
-  try {
-    const ext = file.name.split('.').pop()
-    const path = `thumbnails/${userId}/${Date.now()}.${ext}`
-    const storageRef = ref(storage, path)
-    const snapshot = await uploadBytes(storageRef, file)
-    const downloadUrl = await getDownloadURL(snapshot.ref)
-    return downloadUrl
-  } catch (error) {
-    console.error('画像アップロードに失敗しました:', error.code, error.message)
-    throw new Error(`画像のアップロード処理でエラーが発生しました。(${error.code || 'unknown'})`)
-  }
-}
-*/
 
 export default function EditPage() {
   const { id } = useParams()
@@ -39,21 +17,18 @@ export default function EditPage() {
 
   useEffect(() => {
     async function fetchGame() {
+      if (!user) {
+        setFetching(false)
+        return
+      }
+      const userId = user.id || user.uid
+      
       try {
-        const docRef = doc(db, 'games', id)
-        const docSnap = await getDoc(docRef)
-        
-        if (!docSnap.exists()) {
+        const data = await gameService.getGameById(id)
+        if (!data || data.authorId !== userId) {
           navigate('/mypage')
           return
         }
-        
-        const data = docSnap.data()
-        if (data.authorId !== user?.uid) {
-          navigate('/mypage')
-          return
-        }
-        
         setGame(data)
       } catch (err) {
         console.error(err)
@@ -66,10 +41,12 @@ export default function EditPage() {
   }, [id, user, navigate])
 
   async function handleSubmit({ form, thumbnailFile }) {
-    if (!user || !user.uid) {
+    if (!user || (!user.id && !user.uid)) {
       setSubmitError('ログインセッションが有効ではありません。')
       return
     }
+    
+    const userId = user.id || user.uid
 
     setLoading(true)
     setSubmitError('')
@@ -77,22 +54,13 @@ export default function EditPage() {
     try {
       let thumbnailUrl = game.thumbnailUrl || null
       
-      // [TEMPORARILY DISABLED] Storage Upload: 画像処理一時停止中
-      // if (thumbnailFile) {
-      //   thumbnailUrl = await uploadThumbnail(thumbnailFile, user.uid)
-      // }
+      if (thumbnailFile) {
+        thumbnailUrl = await storageService.uploadThumbnail(thumbnailFile, userId)
+      }
 
-      const docRef = doc(db, 'games', id)
-      await updateDoc(docRef, {
-        title: form.title,
-        shortDescription: form.shortDescription,
-        description: form.description || null,
-        gameUrl: form.gameUrl,
-        thumbnailUrl: thumbnailUrl,
-        tags: form.tags,
-        platform: form.platform || null,
-        controls: form.controls || null,
-        updatedAt: serverTimestamp(),
+      await gameService.updateGame(id, {
+        ...form,
+        thumbnailUrl: thumbnailUrl
       })
 
       navigate('/mypage')
@@ -116,7 +84,7 @@ export default function EditPage() {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto py-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">ゲームを編集する</h1>
         <p className="text-sm text-gray-500 mb-8">投稿情報を更新できます</p>
 
@@ -136,5 +104,3 @@ export default function EditPage() {
     </Layout>
   )
 }
-
-

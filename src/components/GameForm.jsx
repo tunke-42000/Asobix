@@ -38,8 +38,7 @@ export default function GameForm({ initialValues = {}, onSubmit, submitLabel = '
     if (!form.shortDescription.trim()) return '短い説明を入力してください'
     if (!form.gameUrl.trim()) return 'ゲームURLを入力してください'
     try { new URL(form.gameUrl) } catch { return 'ゲームURLの形式が正しくありません' }
-    // [TEMPORARILY DISABLED] Storage Upload: 画像必須バリデーションを一時停止
-    // if (!thumbnailPreview) return 'サムネイル画像を選択してください'
+    if (!thumbnailPreview) return 'サムネイル画像を選択してください'
     return null
   }
 
@@ -94,8 +93,7 @@ export default function GameForm({ initialValues = {}, onSubmit, submitLabel = '
         />
       </div>
 
-      {/* [TEMPORARILY DISABLED] Storage Upload: 画像アップロードUIを一時停止 */}
-      {/*
+      {/* Thumbnail */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
           サムネイル画像 <span className="text-red-400">*</span>
@@ -112,7 +110,6 @@ export default function GameForm({ initialValues = {}, onSubmit, submitLabel = '
           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 transition"
         />
       </div>
-      */}
 
       {/* Short Description */}
       <div>

@@ -1,28 +1,22 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, query, orderBy, getDocs } from 'firebase/firestore'
-import { db } from '../lib/firebase'
-import { useAuth } from '../context/AuthContext'
-import GameCard from '../components/GameCard'
+import { gameService } from '../services/gameService'
 import Layout from '../components/Layout'
+import GameCard from '../components/GameCard'
 
 export default function TopPage() {
-  const { user } = useAuth()
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     async function fetchGames() {
       try {
-        const q = query(collection(db, 'games'), orderBy('createdAt', 'desc'))
-        const querySnapshot = await getDocs(q)
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        setGames(data)
+        const fetchedGames = await gameService.getGames()
+        setGames(fetchedGames)
       } catch (err) {
         console.error('Error fetching games:', err)
+        setError('ゲーム一覧の取得に失敗しました')
       } finally {
         setLoading(false)
       }
@@ -32,56 +26,56 @@ export default function TopPage() {
 
   return (
     <Layout>
-      {/* Hero */}
-      <section className="text-center py-16 mb-12">
-        <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 tracking-tight mb-4">
-          ASOBIX
-        </h1>
-        <p className="text-lg text-gray-500 mb-8">
-          作って、遊んで、共有する。
-        </p>
-        {user ? (
-          <Link
-            to="/post"
-            className="inline-block px-7 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-colors"
-          >
-            ゲームを投稿する
-          </Link>
-        ) : (
-          <Link
-            to="/register"
-            className="inline-block px-7 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-colors"
-          >
-            無料で始める
-          </Link>
-        )}
-      </section>
+      <div className="flex flex-col gap-10 py-6">
+        <div className="text-center space-y-4 py-12 px-4 rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-blue-900 tracking-tight">
+            自作ゲームの世界へようこそ
+          </h1>
+          <p className="text-lg text-blue-700 max-w-2xl mx-auto">
+            Asobix（アソビックス）は、開発者が作成したゲームをシェアして遊べるプラットフォームです。お気に入りのゲームを見つけよう！
+          </p>
+          <div className="pt-4">
+            <Link
+              to="/post"
+              className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-md shadow-blue-200 transition-transform active:scale-95"
+            >
+              ゲームを投稿する
+            </Link>
+          </div>
+        </div>
 
-      {/* Game List */}
-      <section>
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">
-          投稿されたゲーム
-        </h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            ✨ 新着ゲーム
+          </h2>
+          
+          {error && (
+            <div className="text-center py-10 bg-red-50 text-red-500 rounded-xl border border-red-100 mb-6">
+              {error}
+            </div>
+          )}
 
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : games.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <div className="text-5xl mb-4">🎮</div>
-            <p className="text-lg font-medium mb-2">まだゲームが投稿されていません</p>
-            <p className="text-sm">最初の投稿者になりましょう！</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {games.map(game => (
-              <GameCard key={game.id} game={game} />
-            ))}
-          </div>
-        )}
-      </section>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl h-72 border border-gray-100 shadow-sm" />
+              ))}
+            </div>
+          ) : games.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {games.map(game => (
+                <GameCard key={game.id} game={game} />
+              ))}
+            </div>
+          ) : (
+            !error && (
+              <div className="text-center py-20 bg-gray-50 rounded-2xl border border-gray-200 border-dashed text-gray-500">
+                まだ投稿されたゲームがありません
+              </div>
+            )
+          )}
+        </div>
+      </div>
     </Layout>
   )
 }
-

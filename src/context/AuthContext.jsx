@@ -1,12 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged
-} from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { auth, db } from '../lib/firebase'
+import { authService } from '../services/authService'
+import { profileService } from '../services/profileService'
+import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
@@ -16,73 +11,82 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser)
-      // currentUser.uid が確実に存在する場合のみ fetchProfile を実行
-      if (currentUser && currentUser.uid) {
-        await fetchProfile(currentUser.uid)
-      } else {
-        setProfile(null)
-        setLoading(false)
+    let mounted = true
+
+    const initSession = async () => {
+      try {
+        const session = await authService.getCurrentSession()
+        if (mounted) {
+          setUser(session?.user || null)
+          if (session?.user) {
+            const prof = await profileService.getProfile(session.user.id)
+            if (mounted) setProfile(prof || null)
+          }
+        }
+      } catch (e) {
+        console.error('Session init error:', e)
+      } finally {
+        if (mounted) setLoading(false)
       }
+    }
+
+    initSession()
+
+    // Listen to token refresh or auth sign in/out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return
+      
+      setUser(session?.user || null)
+      if (session?.user) {
+        const prof = await profileService.getProfile(session.user.id)
+        if (mounted) setProfile(prof || null)
+      } else {
+        if (mounted) setProfile(null)
+      }
+      if (mounted) setLoading(false)
     })
 
-    return () => unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
-  async function fetchProfile(userId) {
-    if (!userId) {
-      setProfile(null)
-      setLoading(false)
-      return
-    }
-
-    try {
-      const docRef = doc(db, 'profiles', userId)
-      const docSnap = await getDoc(docRef)
-      
-      if (docSnap.exists()) {
-        setProfile(docSnap.data())
-      } else {
-        // ドキュメントが見つからない場合は null でフェールバック
-        setProfile(null)
-      }
-    } catch (e) {
-      // 原因がすぐ分かるようにエラーコードとメッセージを出力
-      console.error('Error fetching profile:', e.code, e.message)
-      // オフラインや権限エラー発生時も、UIが壊れないよう null をセットして処理続行
-      setProfile(null)
-    } finally {
-      // 成功でも失敗でも最終的に確実に loading を解除する
-      setLoading(false)
-    }
-  }
-
   async function signUp(email, password, username) {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-    const user = userCredential.user
-    await setDoc(doc(db, 'profiles', user.uid), {
-      username,
-      createdAt: new Date().toISOString()
-    })
-    return user
+    return await authService.register(email, password, username)
   }
 
   async function signIn(email, password) {
-    await signInWithEmailAndPassword(auth, email, password)
+    return await authService.login(email, password)
   }
 
   async function signOut() {
-    await firebaseSignOut(auth)
+    await authService.logout()
+  }
+
+  const value = {
+    user,
+    profile,
+    loading,
+    signUp,
+    signIn,
+    signOut,
+    login: signIn,
+    register: signUp,
+    logout: signOut
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children}
     </AuthContext.Provider>
   )
 }
 
 export function useAuth() {
-  return useContext(AuthContext)
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 }
