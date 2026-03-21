@@ -18,7 +18,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser)
-      if (currentUser) {
+      // currentUser.uid が確実に存在する場合のみ fetchProfile を実行
+      if (currentUser && currentUser.uid) {
         await fetchProfile(currentUser.uid)
       } else {
         setProfile(null)
@@ -30,15 +31,29 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchProfile(userId) {
+    if (!userId) {
+      setProfile(null)
+      setLoading(false)
+      return
+    }
+
     try {
       const docRef = doc(db, 'profiles', userId)
       const docSnap = await getDoc(docRef)
+      
       if (docSnap.exists()) {
         setProfile(docSnap.data())
+      } else {
+        // ドキュメントが見つからない場合は null でフェールバック
+        setProfile(null)
       }
     } catch (e) {
-      console.error('Error fetching profile:', e)
+      // 原因がすぐ分かるようにエラーコードとメッセージを出力
+      console.error('Error fetching profile:', e.code, e.message)
+      // オフラインや権限エラー発生時も、UIが壊れないよう null をセットして処理続行
+      setProfile(null)
     } finally {
+      // 成功でも失敗でも最終的に確実に loading を解除する
       setLoading(false)
     }
   }
