@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { gameService } from '../services/gameService'
+import { friendService } from '../services/friendService'
 import { ROUTES } from '../constants/routes'
 import { PLATFORMS } from '../constants/options'
 import Layout from '../components/Layout'
 import GameCard from '../components/GameCard'
 
 export default function TopPage() {
+  const { user } = useAuth()
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatforms, setSelectedPlatforms] = useState([])
+  const [showFriendsOnly, setShowFriendsOnly] = useState(false)
+  const [friendIds, setFriendIds] = useState([])
 
   useEffect(() => {
     async function fetchGames() {
@@ -28,6 +33,20 @@ export default function TopPage() {
     fetchGames()
   }, [])
 
+  useEffect(() => {
+    async function fetchFriends() {
+      if (user) {
+        try {
+          const fData = await friendService.getFriends(user.id)
+          setFriendIds(fData.map(f => f.id))
+        } catch (e) {
+          console.error('Error fetching friends:', e)
+        }
+      }
+    }
+    fetchFriends()
+  }, [user])
+
   function togglePlatformFilter(p) {
     setSelectedPlatforms(prev => 
       prev.includes(p) ? prev.filter(item => item !== p) : [...prev, p]
@@ -37,6 +56,7 @@ export default function TopPage() {
   function handleReset() {
     setSearchQuery('')
     setSelectedPlatforms([])
+    setShowFriendsOnly(false)
   }
 
   // Filtered Games Logic
@@ -47,8 +67,10 @@ export default function TopPage() {
     const matchesPlatform = selectedPlatforms.length > 0
       ? selectedPlatforms.some(sp => game.platform?.includes(sp))
       : true
+      
+    const matchesFriend = showFriendsOnly ? friendIds.includes(game.authorId) : true
 
-    return matchesSearch && matchesPlatform
+    return matchesSearch && matchesPlatform && matchesFriend
   })
 
   return (
@@ -78,7 +100,7 @@ export default function TopPage() {
         <section className="max-w-6xl mx-auto px-2">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-10 flex flex-col gap-6">
             
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center w-full">
               <div className="relative w-full md:w-96">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">🔍</span>
                 <input
@@ -90,10 +112,27 @@ export default function TopPage() {
                 />
               </div>
 
-              {(searchQuery || selectedPlatforms.length > 0) && (
+              <div className="flex bg-gray-100 p-1 rounded-xl w-fit shrink-0">
+                <button
+                  onClick={() => setShowFriendsOnly(false)}
+                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${!showFriendsOnly ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  全てのゲーム
+                </button>
+                {user && (
+                 <button
+                    onClick={() => setShowFriendsOnly(true)}
+                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${showFriendsOnly ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    フレンドのみ
+                  </button>
+                )}
+              </div>
+
+              {(searchQuery || selectedPlatforms.length > 0 || showFriendsOnly) && (
                 <button
                   onClick={handleReset}
-                  className="text-sm font-bold text-gray-500 hover:text-red-500 bg-gray-100 hover:bg-red-50 px-5 py-3 rounded-xl transition-colors whitespace-nowrap active:scale-95"
+                  className="text-sm font-bold text-gray-500 hover:text-red-500 bg-gray-100 hover:bg-red-50 px-5 py-3 rounded-xl transition-colors whitespace-nowrap active:scale-95 ml-auto"
                 >
                   ✖ 絞り込み解除
                 </button>

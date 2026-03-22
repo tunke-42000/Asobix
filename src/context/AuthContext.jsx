@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
         if (!prof) {
           // If profile doesn't exist, create it automatically
           const username = sessionUser.user_metadata?.username || sessionUser.email?.split('@')[0] || 'User'
-          await profileService.upsertProfile(sessionUser.id, username)
+          await profileService.createProfile(sessionUser.id, username)
           prof = await profileService.getProfile(sessionUser.id)
         }
         if (mounted) setProfile(prof || null)

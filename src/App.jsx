@@ -9,6 +9,7 @@ import RegisterPage from './pages/RegisterPage'
 import PostPage from './pages/PostPage'
 import EditPage from './pages/EditPage'
 import MyPage from './pages/MyPage'
+import FriendsPage from './pages/FriendsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -36,6 +37,12 @@ export default function App() {
           <Route path={ROUTES.MYPAGE} element={
             <ProtectedRoute>
               <MyPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path={ROUTES.FRIENDS} element={
+            <ProtectedRoute>
+              <FriendsPage />
             </ProtectedRoute>
           } />
         </Routes>

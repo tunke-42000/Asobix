@@ -4,6 +4,7 @@ export const ROUTES = {
   REGISTER: '/register',
   POST: '/post',
   MYPAGE: '/mypage',
+  FRIENDS: '/friends',
   
   // Router definition paths
   EDIT_ROUTE: '/edit/:id',
