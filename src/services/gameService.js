@@ -1,5 +1,17 @@
 import { supabase } from '../lib/supabase'
 
+function parsePlatform(p) {
+  if (!p) return []
+  try {
+    const parsed = JSON.parse(p)
+    if (Array.isArray(parsed)) return parsed
+  } catch {
+    // JSONパースに失敗した場合（過去の自由入力データ等）はカンマやスラッシュで分割して配列化
+    return p.split(/[,/]/).map(s => s.trim()).filter(Boolean)
+  }
+  return []
+}
+
 function mapRowToModel(row) {
   if (!row) return null
   return {
@@ -12,7 +24,7 @@ function mapRowToModel(row) {
     gameUrl: row.game_url,
     thumbnailUrl: row.thumbnail_url,
     tags: row.tags || [],
-    platform: row.platform || '',
+    platform: parsePlatform(row.platform),
     controls: row.controls || '',
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -62,7 +74,7 @@ export const gameService = {
       game_url: gameData.gameUrl,
       thumbnail_url: gameData.thumbnailUrl,
       tags: gameData.tags || [],
-      platform: gameData.platform || '',
+      platform: JSON.stringify(gameData.platform || []),
       controls: gameData.controls || ''
     }
 
@@ -84,7 +96,7 @@ export const gameService = {
       game_url: gameData.gameUrl,
       thumbnail_url: gameData.thumbnailUrl,
       tags: gameData.tags || [],
-      platform: gameData.platform || '',
+      platform: JSON.stringify(gameData.platform || []),
       controls: gameData.controls || ''
       // updated_at is handled by DB trigger
     }

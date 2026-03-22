@@ -7,6 +7,7 @@ export function validateGameForm(form, thumbnailPreview, isEdit = false) {
   } catch { 
     return 'ゲームURLの形式が正しくありません（http:// または https:// から始めてください）' 
   }
+  if (!form.platform || form.platform.length === 0) return 'プラットフォームを1つ以上選択してください'
   if (!isEdit && !thumbnailPreview) return 'サムネイル画像を選択してください'
   
   return null

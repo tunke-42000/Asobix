@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { validateGameForm } from '../utils/validation'
+import { PLATFORMS } from '../constants/options'
 
 export default function GameForm({ initialValues, onSubmit, submitLabel = '投稿する', isSubmitting = false, isEdit = false }) {
   const [form, setForm] = useState({
@@ -7,7 +8,7 @@ export default function GameForm({ initialValues, onSubmit, submitLabel = '投�
     shortDescription: '',
     description: '',
     gameUrl: '',
-    platform: '',
+    platform: [],
     tags: '',
     controls: ''
   })
@@ -22,7 +23,7 @@ export default function GameForm({ initialValues, onSubmit, submitLabel = '投�
         shortDescription: initialValues.shortDescription || '',
         description: initialValues.description || '',
         gameUrl: initialValues.gameUrl || '',
-        platform: initialValues.platform || '',
+        platform: initialValues.platform || [],
         tags: initialValues.tags?.join(', ') || '',
         controls: initialValues.controls || ''
       })
@@ -42,6 +43,16 @@ export default function GameForm({ initialValues, onSubmit, submitLabel = '投�
       setThumbnailFile(file)
       setThumbnailPreview(URL.createObjectURL(file))
     }
+  }
+
+  function togglePlatform(p) {
+    setForm(prev => {
+      const isSelected = prev.platform.includes(p)
+      const nextPlatform = isSelected 
+        ? prev.platform.filter(item => item !== p)
+        : [...prev.platform, p]
+      return { ...prev, platform: nextPlatform }
+    })
   }
 
   function handleSubmit(e) {
@@ -70,7 +81,7 @@ export default function GameForm({ initialValues, onSubmit, submitLabel = '投�
     <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex flex-col gap-6">
       
       {validationError && (
-        <div className="px-4 py-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+        <div className="px-4 py-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 animate-pulse">
           {validationError}
         </div>
       )}
@@ -93,7 +104,7 @@ export default function GameForm({ initialValues, onSubmit, submitLabel = '投�
       {/* Thumbnail */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          サムネイル画像 <span className="text-red-400">*</span>
+          サムネイル画像 {isEdit ? '' : <span className="text-red-400">*</span>}
         </label>
         {thumbnailPreview && (
           <div className="aspect-video rounded-lg overflow-hidden bg-gray-100 mb-3">
@@ -152,29 +163,39 @@ export default function GameForm({ initialValues, onSubmit, submitLabel = '投�
       </div>
 
       {/* Platform & Tags */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">プラットフォーム</label>
-          <input
-            type="text"
-            name="platform"
-            value={form.platform}
-            onChange={handleChange}
-            placeholder="Windows / Mac / Web"
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
-          />
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          対応プラットフォーム (複数選択可) <span className="text-red-400">*</span>
+        </label>
+        <div className="flex flex-wrap gap-2 mb-6">
+          {PLATFORMS.map(p => {
+            const isSelected = form.platform.includes(p)
+            return (
+              <button
+                type="button"
+                key={p}
+                onClick={() => togglePlatform(p)}
+                className={`px-4 py-2 border rounded-xl text-sm font-medium transition-all ${
+                  isSelected 
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200' 
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {p}
+              </button>
+            )
+          })}
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">タグ (カンマ区切り)</label>
-          <input
-            type="text"
-            name="tags"
-            value={form.tags}
-            onChange={handleChange}
-            placeholder="RPG, ドット絵, アクション"
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
-          />
-        </div>
+
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">タグ (カンマ区切り)</label>
+        <input
+          type="text"
+          name="tags"
+          value={form.tags}
+          onChange={handleChange}
+          placeholder="RPG, ドット絵, アクション"
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
+        />
       </div>
 
       {/* Controls */}
