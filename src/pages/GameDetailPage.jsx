@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { gameService } from '../services/gameService'
 import { ROUTES } from '../constants/routes'
 import Layout from '../components/Layout'
+import LikeButton from '../components/LikeButton'
 
 function formatDate(isoString) {
   if (!isoString) return ''
@@ -16,6 +18,7 @@ function formatDate(isoString) {
 
 export default function GameDetailPage() {
   const { id } = useParams()
+  const { user } = useAuth()
   const [game, setGame] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -117,21 +120,32 @@ export default function GameDetailPage() {
                 </div>
               </div>
 
-              {/* Play Button */}
-              {game.gameUrl ? (
-                <a
-                  href={game.gameUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full text-center py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold rounded-2xl shadow-lg shadow-blue-200 transition-all hover:-translate-y-1 active:scale-95"
-                >
-                  ゲームを遊ぶ 🎮
-                </a>
-              ) : (
-                <button disabled className="block w-full text-center py-4 bg-gray-300 text-white text-lg font-bold rounded-2xl cursor-not-allowed">
-                  URLがありません
-                </button>
-              )}
+              {/* Play Button & Like Button */}
+              <div className="flex flex-col sm:flex-row gap-4 mt-auto">
+                {game.gameUrl ? (
+                  <a
+                    href={game.gameUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 text-center py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold rounded-2xl shadow-lg shadow-blue-200 transition-all hover:-translate-y-1 active:scale-95"
+                  >
+                    ゲームを遊ぶ 🎮
+                  </a>
+                ) : (
+                  <button disabled className="flex-1 text-center py-4 bg-gray-300 text-white text-lg font-bold rounded-2xl cursor-not-allowed">
+                    URLがありません
+                  </button>
+                )}
+                
+                <LikeButton
+                  gameId={game.id}
+                  authorId={game.authorId}
+                  initialLikeCount={game.likeCount}
+                  initialLikedUserIds={game.likedUserIds}
+                  currentUser={user}
+                  className="px-6 py-4 rounded-2xl md:h-[60px] justify-center"
+                />
+              </div>
             </div>
           </div>
         </div>

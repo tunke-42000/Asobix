@@ -14,6 +14,7 @@ function parsePlatform(p) {
 
 function mapRowToModel(row) {
   if (!row) return null
+  const likes = row.game_likes || []
   return {
     id: row.id,
     authorId: row.user_id,
@@ -27,6 +28,8 @@ function mapRowToModel(row) {
     tags: row.tags || [],
     platform: parsePlatform(row.platform),
     controls: row.controls || '',
+    likeCount: likes.length,
+    likedUserIds: likes.map(l => l.user_id),
     createdAt: row.created_at,
     updatedAt: row.updated_at
   }
@@ -36,7 +39,7 @@ export const gameService = {
   async getGames() {
     const { data, error } = await supabase
       .from('games')
-      .select('*, profiles(username, avatar_url)')
+      .select('*, profiles(username, avatar_url), game_likes(user_id)')
       .order('created_at', { ascending: false })
       
     if (error) throw error
@@ -46,7 +49,7 @@ export const gameService = {
   async getGameById(id) {
     const { data, error } = await supabase
       .from('games')
-      .select('*, profiles(username, avatar_url)')
+      .select('*, profiles(username, avatar_url), game_likes(user_id)')
       .eq('id', id)
       .single()
       
@@ -57,7 +60,7 @@ export const gameService = {
   async getGamesByUser(userId) {
     const { data, error } = await supabase
       .from('games')
-      .select('*, profiles(username, avatar_url)')
+      .select('*, profiles(username, avatar_url), game_likes(user_id)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       
