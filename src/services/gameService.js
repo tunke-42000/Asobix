@@ -15,6 +15,14 @@ function parsePlatform(p) {
 function mapRowToModel(row) {
   if (!row) return null
   const likes = row.game_likes || []
+  const reviews = row.game_reviews || []
+  
+  let averageRating = 0
+  if (reviews.length > 0) {
+    const sum = reviews.reduce((acc, curr) => acc + curr.rating, 0)
+    averageRating = Number((sum / reviews.length).toFixed(1))
+  }
+
   return {
     id: row.id,
     authorId: row.user_id,
@@ -30,6 +38,8 @@ function mapRowToModel(row) {
     controls: row.controls || '',
     likeCount: likes.length,
     likedUserIds: likes.map(l => l.user_id),
+    reviewCount: reviews.length,
+    averageRating: averageRating,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   }
@@ -39,7 +49,7 @@ export const gameService = {
   async getGames() {
     const { data, error } = await supabase
       .from('games')
-      .select('*, profiles(username, avatar_url), game_likes(user_id)')
+      .select('*, profiles(username, avatar_url), game_likes(user_id), game_reviews(rating)')
       .order('created_at', { ascending: false })
       
     if (error) throw error
@@ -49,7 +59,7 @@ export const gameService = {
   async getGameById(id) {
     const { data, error } = await supabase
       .from('games')
-      .select('*, profiles(username, avatar_url), game_likes(user_id)')
+      .select('*, profiles(username, avatar_url), game_likes(user_id), game_reviews(rating)')
       .eq('id', id)
       .single()
       
@@ -60,7 +70,7 @@ export const gameService = {
   async getGamesByUser(userId) {
     const { data, error } = await supabase
       .from('games')
-      .select('*, profiles(username, avatar_url), game_likes(user_id)')
+      .select('*, profiles(username, avatar_url), game_likes(user_id), game_reviews(rating)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       

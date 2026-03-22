@@ -5,6 +5,7 @@ import { gameService } from '../services/gameService'
 import { ROUTES } from '../constants/routes'
 import Layout from '../components/Layout'
 import LikeButton from '../components/LikeButton'
+import ReviewSection from '../components/Review/ReviewSection'
 
 function formatDate(isoString) {
   if (!isoString) return ''
@@ -201,6 +202,9 @@ export default function GameDetailPage() {
           </div>
 
         </div>
+
+        {/* Reviews Section */}
+        <ReviewSection gameId={game.id} />
 
       </div>
     </Layout>

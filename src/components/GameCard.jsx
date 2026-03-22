@@ -37,9 +37,23 @@ export default function GameCard({ game }) {
 
       {/* Content */}
       <div className="p-5 flex flex-col flex-1">
-        <h3 className="font-bold text-gray-900 text-lg leading-snug line-clamp-1 mb-1.5 group-hover:text-blue-600 transition-colors">
+        <h3 className="font-bold text-gray-900 text-lg leading-snug line-clamp-1 mb-1 group-hover:text-blue-600 transition-colors">
           {game.title}
         </h3>
+        
+        {/* Rating Line */}
+        <div className="flex items-center gap-1.5 mb-2.5">
+          {game.reviewCount > 0 ? (
+            <>
+              <span className="text-yellow-400 text-sm">★</span>
+              <span className="font-bold text-gray-700 text-sm">{game.averageRating.toFixed(1)}</span>
+              <span className="text-gray-400 text-xs">({game.reviewCount})</span>
+            </>
+          ) : (
+            <span className="text-gray-400 text-xs">評価はまだありません</span>
+          )}
+        </div>
+
         <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed h-10 shrink-0">
           {game.shortDescription}
         </p>
