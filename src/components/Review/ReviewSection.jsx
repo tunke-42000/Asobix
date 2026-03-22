@@ -86,7 +86,7 @@ export default function ReviewSection({ gameId }) {
 
   return (
     <div className="mt-12 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-8 border-b pb-4">カスタマーレビュー</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-8 border-b pb-4">レビュー</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         

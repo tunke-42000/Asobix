@@ -8,24 +8,30 @@ export const reviewService = {
   async getGameReviews(gameId) {
     const { data, error } = await supabase
       .from('game_reviews')
-      .select(`
-        id,
-        game_id,
-        user_id,
-        rating,
-        review_text,
-        created_at,
-        updated_at,
-        profiles (
-          id,
-          username,
-          avatar_url
-        )
-      `)
+      .select('*')
       .eq('game_id', gameId)
       .order('created_at', { ascending: false })
 
     if (error) throw error
+
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map(r => r.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+      const profileMap = (profiles || []).reduce((acc, p) => {
+        acc[p.id] = p;
+        return acc;
+      }, {});
+
+      return data.map(review => ({
+        ...review,
+        profiles: profileMap[review.user_id] || null
+      }));
+    }
+
     return data
   },
 
