@@ -18,6 +18,21 @@ export const storageService = {
     // We get the public URL and return it directly so the DB stores the full URL.
     return this.getPublicThumbnailUrl(data.path)
   },
+  async uploadAvatar(file, userId) {
+    if (!userId) throw new Error('ログインしていません')
+    
+    const ext = file.name.split('.').pop()
+    const filename = `avatar-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
+    const path = `avatars/${userId}/${filename}`
+    
+    const { data, error } = await supabase.storage
+      .from('thumbnails')
+      .upload(path, file, { upsert: true })
+      
+    if (error) throw error
+    
+    return this.getPublicThumbnailUrl(data.path)
+  },
 
   getPublicThumbnailUrl(path) {
     if (!path) return null

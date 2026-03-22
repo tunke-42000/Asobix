@@ -85,9 +85,13 @@ export default function GameDetailPage() {
                 
                 {/* Author */}
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center font-bold text-lg">
-                    {game.authorName[0]?.toUpperCase()}
-                  </div>
+                  {game.authorAvatarUrl ? (
+                    <img src={game.authorAvatarUrl} className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm" />
+                  ) : (
+                    <div className="w-10 h-10 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center font-bold text-lg">
+                      {game.authorName[0]?.toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm text-gray-500">制作者</p>
                     <p className="font-semibold text-gray-900">{game.authorName}</p>

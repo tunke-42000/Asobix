@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { gameService } from '../services/gameService'
 import { profileService } from '../services/profileService'
+import { storageService } from '../services/storageService'
 import { ROUTES } from '../constants/routes'
 import { MESSAGES } from '../constants/messages'
 import { getErrorMessage } from '../utils/errorMessages'
@@ -20,6 +21,7 @@ export default function MyPage() {
   const [newUsername, setNewUsername] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
   const [profileMessage, setProfileMessage] = useState({ text: '', type: '' })
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -74,17 +76,33 @@ export default function MyPage() {
 
     try {
       await profileService.updateUsername(profile.id, newUsername.trim())
-      // To reflect globally, we realistically should refresh profile setting, but updating local state allows instant feedback.
-      // Refresh the page or wait for onAuthStateChange? Easier to just reload gently or inform user.
       setProfileMessage({ text: 'ユーザー名を更新しました！', type: 'success' })
       setIsEditingProfile(false)
-      // Refetch logic usually managed by Context, but we can do a forced reload for simplicity to reflect everywhere
       setTimeout(() => window.location.reload(), 1000)
     } catch (err) {
       console.error('Update Username Error:', err)
       setProfileMessage({ text: 'ユーザー名の更新に失敗しました。既に入力された名前が使われている可能性があります。', type: 'error' })
     } finally {
       setIsUpdating(false)
+    }
+  }
+
+  async function handleAvatarChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setIsUploadingAvatar(true)
+    setProfileMessage({ text: 'アバター画像をアップロードしています...', type: 'info' })
+
+    try {
+      const url = await storageService.uploadAvatar(file, user.id)
+      await profileService.updateAvatar(user.id, url)
+      setProfileMessage({ text: 'アバター画像を更新しました！', type: 'success' })
+      setTimeout(() => window.location.reload(), 1000)
+    } catch (err) {
+      console.error(err)
+      setProfileMessage({ text: 'アバター画像のアップロードに失敗しました。', type: 'error' })
+    } finally {
+      setIsUploadingAvatar(false)
     }
   }
 
@@ -106,9 +124,19 @@ export default function MyPage() {
           <div className="px-6 md:px-10 pb-8 flex flex-col md:flex-row items-center md:items-start justify-between gap-6 relative -mt-12 sm:-mt-16">
             
             <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white text-blue-500 rounded-full flex items-center justify-center font-bold text-4xl shadow-md border-4 border-white">
-                {profile?.username?.[0]?.toUpperCase() || '?'}
-              </div>
+              <label className="relative cursor-pointer group shrink-0">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Avatar" className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover shadow-md border-4 border-white bg-white" />
+                ) : (
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white text-blue-500 rounded-full flex items-center justify-center font-bold text-4xl shadow-md border-4 border-white">
+                    {profile?.username?.[0]?.toUpperCase() || '?'}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity m-1">
+                  <span className="text-white text-sm font-bold">{isUploadingAvatar ? '処理中...' : '📷 変更'}</span>
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={isUploadingAvatar} />
+              </label>
               
               <div className="text-center md:text-left pt-2 pb-2">
                 {isEditingProfile ? (
@@ -161,7 +189,7 @@ export default function MyPage() {
           
           <div className="px-6 md:px-10 pb-6">
              {profileMessage.text && (
-                <div className={`px-4 py-3 text-sm rounded-lg border font-medium text-center ${profileMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+                <div className={`px-4 py-3 text-sm rounded-lg border font-medium text-center ${profileMessage.type === 'success' ? 'bg-green-50 text-green-700 border-green-100' : profileMessage.type === 'info' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
                   {profileMessage.text}
                 </div>
               )}

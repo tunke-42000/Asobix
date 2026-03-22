@@ -49,6 +49,21 @@ export const profileService = {
     }
   },
 
+  async updateAvatar(userId, avatarUrl) {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      
+    if (error) {
+      console.error("profileService.updateAvatar error:", error)
+      throw error
+    }
+  },
+
   async searchByPublicId(publicId) {
     if (!publicId) return null
     const { data, error } = await supabase

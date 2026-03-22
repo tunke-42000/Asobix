@@ -167,9 +167,13 @@ export default function FriendsPage() {
                   {friends.map(f => (
                     <div key={f.friendship_id} className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:shadow-md transition bg-gray-50">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white text-blue-500 font-bold rounded-full flex items-center justify-center text-xl shadow-sm border border-gray-100">
-                          {f.username[0]?.toUpperCase()}
-                        </div>
+                        {f.avatar_url ? (
+                          <img src={f.avatar_url} className="w-12 h-12 rounded-full object-cover shadow-sm border border-gray-100" />
+                        ) : (
+                          <div className="w-12 h-12 bg-white text-blue-500 font-bold rounded-full flex items-center justify-center text-xl shadow-sm border border-gray-100">
+                            {f.username[0]?.toUpperCase()}
+                          </div>
+                        )}
                         <div>
                           <p className="font-bold text-gray-900">{f.username}</p>
                           <p className="text-xs text-gray-500 font-mono mt-0.5">{f.public_user_id}</p>
@@ -215,9 +219,13 @@ export default function FriendsPage() {
 
               {searchResult && searchResult.id !== user.id && (
                 <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6 text-center shadow-inner">
-                  <div className="w-20 h-20 bg-white text-blue-500 font-bold rounded-full flex items-center justify-center text-4xl shadow-sm border border-gray-100 mx-auto mb-4">
-                    {searchResult.username[0]?.toUpperCase()}
-                  </div>
+                  {searchResult.avatar_url ? (
+                    <img src={searchResult.avatar_url} className="w-20 h-20 rounded-full object-cover shadow-sm border border-gray-100 mx-auto mb-4" />
+                  ) : (
+                    <div className="w-20 h-20 bg-white text-blue-500 font-bold rounded-full flex items-center justify-center text-4xl shadow-sm border border-gray-100 mx-auto mb-4">
+                      {searchResult.username[0]?.toUpperCase()}
+                    </div>
+                  )}
                   <h3 className="text-xl font-bold text-gray-900 mb-1">{searchResult.username}</h3>
                   <p className="text-gray-500 font-mono text-sm mb-6">{searchResult.public_user_id}</p>
                   <button onClick={() => handleSendRequest(searchResult.id)} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all active:scale-95">
@@ -240,9 +248,13 @@ export default function FriendsPage() {
                      {receivedRequests.map(req => (
                        <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 rounded-2xl bg-white shadow-sm gap-4">
                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-blue-50 text-blue-500 font-bold rounded-full flex items-center justify-center text-xl">
-                              {req.sender.username[0]?.toUpperCase()}
-                            </div>
+                            {req.sender.avatar_url ? (
+                               <img src={req.sender.avatar_url} className="w-12 h-12 rounded-full object-cover shadow-sm border border-gray-100" />
+                            ) : (
+                              <div className="w-12 h-12 bg-blue-50 text-blue-500 font-bold rounded-full flex items-center justify-center text-xl">
+                                {req.sender.username[0]?.toUpperCase()}
+                              </div>
+                            )}
                             <div>
                               <p className="font-bold text-gray-900">{req.sender.username}</p>
                               <p className="text-xs text-gray-500 font-mono mt-0.5">{req.sender.public_user_id}</p>
@@ -267,9 +279,13 @@ export default function FriendsPage() {
                      {sentRequests.map(req => (
                        <div key={req.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl bg-gray-50">
                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white text-gray-500 font-bold rounded-full flex items-center justify-center text-lg border border-gray-200">
-                              {req.receiver.username[0]?.toUpperCase()}
-                            </div>
+                            {req.receiver.avatar_url ? (
+                               <img src={req.receiver.avatar_url} className="w-10 h-10 rounded-full object-cover shadow-sm border border-gray-100" />
+                            ) : (
+                              <div className="w-10 h-10 bg-white text-gray-500 font-bold rounded-full flex items-center justify-center text-lg border border-gray-200">
+                                {req.receiver.username[0]?.toUpperCase()}
+                              </div>
+                            )}
                             <div>
                               <p className="font-bold text-gray-900">{req.receiver.username}</p>
                               <p className="text-xs text-gray-400 font-mono mt-0.5">{req.receiver.public_user_id}</p>

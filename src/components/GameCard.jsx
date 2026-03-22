@@ -61,9 +61,18 @@ export default function GameCard({ game }) {
 
         {/* Author */}
         <div className="pt-3 border-t border-gray-50 flex items-center justify-between">
-           <p className="text-xs text-gray-400 font-medium">
-             by <span className="text-gray-600">{game.authorName || '名無し'}</span>
-           </p>
+           <div className="flex items-center gap-2">
+             {game.authorAvatarUrl ? (
+               <img src={game.authorAvatarUrl} className="w-5 h-5 rounded-full object-cover border border-gray-100" />
+             ) : (
+               <div className="w-5 h-5 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center text-[10px] font-bold">
+                 {game.authorName[0]?.toUpperCase()}
+               </div>
+             )}
+             <p className="text-xs text-gray-400 font-medium">
+               by <span className="text-gray-600">{game.authorName || '名無し'}</span>
+             </p>
+           </div>
         </div>
       </div>
     </Link>

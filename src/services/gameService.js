@@ -18,6 +18,7 @@ function mapRowToModel(row) {
     id: row.id,
     authorId: row.user_id,
     authorName: row.profiles?.username || '名無し',
+    authorAvatarUrl: row.profiles?.avatar_url || null,
     title: row.title,
     shortDescription: row.short_description || '',
     description: row.description || '',
