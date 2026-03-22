@@ -1,10 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { ENV } from './env'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials are missing. Check your .env file.')
-}
-
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '')
+// Initialize Supabase relying on centralized env.js
+export const supabase = createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY)

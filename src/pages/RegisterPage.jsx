@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { ROUTES } from '../constants/routes'
+import { MESSAGES } from '../constants/messages'
+import { getErrorMessage } from '../utils/errorMessages'
+import { validateRegisterForm } from '../utils/validation'
 import Layout from '../components/Layout'
 
 export default function RegisterPage() {
   const { signUp } = useAuth()
   const [form, setForm] = useState({ username: '', email: '', password: '' })
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
   function handleChange(e) {
@@ -16,20 +20,24 @@ export default function RegisterPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setError('')
-    if (!form.username.trim()) return setError('ユーザー名を入力してください')
-    if (!form.email.trim()) return setError('メールアドレスを入力してください')
-    if (form.password.length < 6) return setError('パスワードは6文字以上で入力してください')
+    if (isSubmitting) return
+    setErrorMessage('')
 
-    setLoading(true)
+    const valErr = validateRegisterForm(form)
+    if (valErr) {
+      setErrorMessage(valErr)
+      return
+    }
+
+    setIsSubmitting(true)
     try {
       await signUp(form.email, form.password, form.username)
       setSuccess(true)
     } catch (err) {
       console.error("Supabase signup error:", err)
-      setError(err.message || '登録に失敗しました')
+      setErrorMessage(getErrorMessage(err, MESSAGES.ERROR.REGISTER))
     } finally {
-      setLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -46,13 +54,12 @@ export default function RegisterPage() {
             <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
               ✨
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">登録が完了しました！</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">{MESSAGES.SUCCESS.REGISTER}</h2>
             <p className="text-gray-600 mb-8 text-sm">
-              アカウントの作成に成功しました。<br />
               （※メール認証が有効な場合は、届いたメールのリンクをクリックしてください）
             </p>
             <Link
-              to="/login"
+              to={ROUTES.LOGIN}
               className="inline-block px-6 py-3 w-full bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-colors shadow-sm"
             >
               ログイン画面へ進む
@@ -60,9 +67,9 @@ export default function RegisterPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5">
-            {error && (
+            {errorMessage && (
               <div className="px-4 py-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
-                {error}
+                {errorMessage}
               </div>
             )}
 
@@ -104,10 +111,10 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitting}
               className="w-full py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 disabled:opacity-60 transition-colors"
             >
-              {loading ? '登録中...' : 'アカウントを作成'}
+              {isSubmitting ? '登録中...' : 'アカウントを作成'}
             </button>
           </form>
         )}
@@ -115,7 +122,7 @@ export default function RegisterPage() {
         {!success && (
           <p className="text-center text-sm text-gray-500 mt-6">
             すでにアカウントをお持ちですか？{' '}
-            <Link to="/login" className="text-blue-500 hover:underline font-medium">
+            <Link to={ROUTES.LOGIN} className="text-blue-500 hover:underline font-medium">
               ログイン
             </Link>
           </p>

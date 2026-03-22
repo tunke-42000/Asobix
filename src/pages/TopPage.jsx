@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { gameService } from '../services/gameService'
+import { ROUTES } from '../constants/routes'
 import Layout from '../components/Layout'
 import GameCard from '../components/GameCard'
 
@@ -36,7 +37,7 @@ export default function TopPage() {
           </p>
           <div className="pt-4">
             <Link
-              to="/post"
+              to={ROUTES.POST}
               className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-md shadow-blue-200 transition-transform active:scale-95"
             >
               ゲームを投稿する

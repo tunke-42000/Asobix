@@ -2,40 +2,49 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { gameService } from '../services/gameService'
+import { ROUTES } from '../constants/routes'
+import { MESSAGES } from '../constants/messages'
+import { getErrorMessage } from '../utils/errorMessages'
 import Layout from '../components/Layout'
 import GameCard from '../components/GameCard'
 
 export default function MyPage() {
   const { user, profile, signOut } = useAuth()
   const [games, setGames] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [isFetching, setIsFetching] = useState(true)
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
+    let mounted = true
     async function fetchMyGames() {
-      if (!user) return
+      if (!user) {
+        if (mounted) setIsFetching(false)
+        return
+      }
       try {
-        const fetchedGames = await gameService.getGamesByUser(user.id) // uuid handling
-        setGames(fetchedGames)
+        const fetchedGames = await gameService.getGamesByUser(user.id)
+        if (mounted) setGames(fetchedGames)
       } catch (err) {
-        console.error(err)
-        setError('投稿データの取得に失敗しました')
+        console.error('MyPage fetch games error:', err)
+        if (mounted) setErrorMessage(getErrorMessage(err, MESSAGES.ERROR.FETCH_GAMES))
       } finally {
-        setLoading(false)
+        if (mounted) setIsFetching(false)
       }
     }
     fetchMyGames()
+    
+    return () => { mounted = false }
   }, [user])
 
   async function handleDelete(gameId) {
-    if (!window.confirm('本当にこの投稿を削除しますか？')) return
+    if (!window.confirm(MESSAGES.CONFIRM.DELETE)) return
 
     try {
       await gameService.deleteGame(gameId)
       setGames(games.filter(g => g.id !== gameId))
     } catch (err) {
-      console.error(err)
-      alert('削除に失敗しました')
+      console.error('Delete Game Error:', err)
+      alert(getErrorMessage(err, MESSAGES.ERROR.DELETE))
     }
   }
 
@@ -67,21 +76,21 @@ export default function MyPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">あなたの投稿</h2>
             <Link
-              to="/post"
+              to={ROUTES.POST}
               className="text-sm font-medium text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition"
             >
               ＋ 新規投稿
             </Link>
           </div>
 
-          {error && (
+          {errorMessage && (
             <div className="px-4 py-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 mb-6">
-              {error}
+              {errorMessage}
             </div>
           )}
 
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-pulse">
+          {isFetching ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
                {[...Array(2)].map((_, i) => (
                 <div key={i} className="bg-white rounded-2xl h-72 border border-gray-100 shadow-sm" />
               ))}
@@ -93,7 +102,7 @@ export default function MyPage() {
                   <GameCard game={game} />
                   <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Link
-                      to={`/edit/${game.id}`}
+                      to={ROUTES.buildEditPath(game.id)}
                       className="w-10 h-10 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full flex items-center justify-center shadow-md hover:bg-white hover:text-blue-600 transition"
                       title="編集"
                     >
@@ -114,7 +123,7 @@ export default function MyPage() {
             <div className="text-center py-20 bg-gray-50 rounded-2xl border border-gray-200 border-dashed">
               <p className="text-gray-500 mb-4">まだ投稿したゲームがありません</p>
               <Link
-                to="/post"
+                to={ROUTES.POST}
                 className="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition shadow-sm"
               >
                 最初のゲームを投稿する

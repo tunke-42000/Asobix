@@ -1,26 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { validateGameForm } from '../utils/validation'
 
-const PLATFORMS = [
-  { value: 'pc', label: 'PC' },
-  { value: 'mobile', label: 'スマホ' },
-  { value: 'both', label: 'PC・スマホ両対応' },
-]
-
-export default function GameForm({ initialValues = {}, onSubmit, submitLabel = '投稿する', loading }) {
+export default function GameForm({ initialValues, onSubmit, submitLabel = '投稿する', isSubmitting = false, isEdit = false }) {
   const [form, setForm] = useState({
     title: '',
     shortDescription: '',
     description: '',
     gameUrl: '',
-    tags: '',
     platform: '',
-    controls: '',
-    ...initialValues,
-    tags: Array.isArray(initialValues.tags) ? initialValues.tags.join(', ') : (initialValues.tags || ''),
+    tags: '',
+    controls: ''
   })
   const [thumbnailFile, setThumbnailFile] = useState(null)
-  const [thumbnailPreview, setThumbnailPreview] = useState(initialValues.thumbnailUrl || null)
-  const [error, setError] = useState('')
+  const [thumbnailPreview, setThumbnailPreview] = useState(null)
+  const [validationError, setValidationError] = useState('')
+
+  useEffect(() => {
+    if (initialValues) {
+      setForm({
+        title: initialValues.title || '',
+        shortDescription: initialValues.shortDescription || '',
+        description: initialValues.description || '',
+        gameUrl: initialValues.gameUrl || '',
+        platform: initialValues.platform || '',
+        tags: initialValues.tags?.join(', ') || '',
+        controls: initialValues.controls || ''
+      })
+      if (initialValues.thumbnailUrl) {
+        setThumbnailPreview(initialValues.thumbnailUrl)
+      }
+    }
+  }, [initialValues])
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -28,38 +38,40 @@ export default function GameForm({ initialValues = {}, onSubmit, submitLabel = '
 
   function handleFileChange(e) {
     const file = e.target.files[0]
-    if (!file) return
-    setThumbnailFile(file)
-    setThumbnailPreview(URL.createObjectURL(file))
+    if (file) {
+      setThumbnailFile(file)
+      setThumbnailPreview(URL.createObjectURL(file))
+    }
   }
 
-  function validate() {
-    if (!form.title.trim()) return 'ゲームタイトルを入力してください'
-    if (!form.shortDescription.trim()) return '短い説明を入力してください'
-    if (!form.gameUrl.trim()) return 'ゲームURLを入力してください'
-    try { new URL(form.gameUrl) } catch { return 'ゲームURLの形式が正しくありません' }
-    if (!thumbnailPreview) return 'サムネイル画像を選択してください'
-    return null
-  }
-
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault()
-    const err = validate()
-    if (err) return setError(err)
-    setError('')
+    setValidationError('')
+    
+    // utils の外部関数を利用してバリデーション
+    const errObj = validateGameForm(form, thumbnailPreview, isEdit)
+    if (errObj) {
+      setValidationError(errObj)
+      return
+    }
 
-    const tags = form.tags
-      ? form.tags.split(',').map(t => t.trim()).filter(Boolean)
-      : []
+    const tagsArray = form.tags
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t)
 
-    await onSubmit({ form: { ...form, tags }, thumbnailFile })
+    onSubmit({
+      form: { ...form, tags: tagsArray },
+      thumbnailFile
+    })
   }
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex flex-col gap-6">
-      {error && (
+      
+      {validationError && (
         <div className="px-4 py-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
-          {error}
+          {validationError}
         </div>
       )}
 
@@ -73,22 +85,7 @@ export default function GameForm({ initialValues = {}, onSubmit, submitLabel = '
           name="title"
           value={form.title}
           onChange={handleChange}
-          placeholder="例: SuperPlatformer"
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
-        />
-      </div>
-
-      {/* Game URL */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          ゲームURL <span className="text-red-400">*</span>
-        </label>
-        <input
-          type="url"
-          name="gameUrl"
-          value={form.gameUrl}
-          onChange={handleChange}
-          placeholder="https://example.com/my-game"
+          placeholder="あそびっくす大冒険"
           className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
         />
       </div>
@@ -114,59 +111,70 @@ export default function GameForm({ initialValues = {}, onSubmit, submitLabel = '
       {/* Short Description */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          短い説明 <span className="text-red-400">*</span>
+          短い説明（一覧表示用） <span className="text-red-400">*</span>
         </label>
         <input
           type="text"
           name="shortDescription"
           value={form.shortDescription}
           onChange={handleChange}
-          placeholder="一覧カードに表示される説明（50字前後）"
-          maxLength={100}
+          placeholder="タップして進む爽快アクション！"
           className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
         />
       </div>
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">詳細説明</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">詳細な説明</label>
         <textarea
           name="description"
           value={form.description}
           onChange={handleChange}
-          rows={5}
-          placeholder="ゲームの詳細な説明（任意）"
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition resize-none"
-        />
-      </div>
-
-      {/* Tags */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">タグ</label>
-        <input
-          type="text"
-          name="tags"
-          value={form.tags}
-          onChange={handleChange}
-          placeholder="アクション, パズル, RPG（カンマ区切り・任意）"
+          rows="4"
+          placeholder="ゲームのストーリーや特徴など"
           className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
         />
       </div>
 
-      {/* Platform */}
+      {/* Game URL */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">対応端末</label>
-        <select
-          name="platform"
-          value={form.platform}
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          ゲームURL (UnityRoom. ふりーむ等) <span className="text-red-400">*</span>
+        </label>
+        <input
+          type="url"
+          name="gameUrl"
+          value={form.gameUrl}
           onChange={handleChange}
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition bg-white"
-        >
-          <option value="">未選択</option>
-          {PLATFORMS.map(p => (
-            <option key={p.value} value={p.value}>{p.label}</option>
-          ))}
-        </select>
+          placeholder="https://..."
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
+        />
+      </div>
+
+      {/* Platform & Tags */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">プラットフォーム</label>
+          <input
+            type="text"
+            name="platform"
+            value={form.platform}
+            onChange={handleChange}
+            placeholder="Windows / Mac / Web"
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">タグ (カンマ区切り)</label>
+          <input
+            type="text"
+            name="tags"
+            value={form.tags}
+            onChange={handleChange}
+            placeholder="RPG, ドット絵, アクション"
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
+          />
+        </div>
       </div>
 
       {/* Controls */}
@@ -176,20 +184,22 @@ export default function GameForm({ initialValues = {}, onSubmit, submitLabel = '
           name="controls"
           value={form.controls}
           onChange={handleChange}
-          rows={3}
-          placeholder="例: WASDで移動、スペースでジャンプ（任意）"
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition resize-none"
+          rows="2"
+          placeholder="矢印キーで移動、Spaceでジャンプ"
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 disabled:opacity-60 transition-colors"
-      >
-        {loading ? '処理中...' : submitLabel}
-      </button>
+      {/* Submit Button */}
+      <div className="pt-4 border-t border-gray-100">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-200 disabled:opacity-60 transition-all active:scale-95"
+        >
+          {isSubmitting ? '処理中...' : submitLabel}
+        </button>
+      </div>
     </form>
   )
 }
-

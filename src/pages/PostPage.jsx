@@ -3,29 +3,31 @@ import { useNavigate } from 'react-router-dom'
 import { gameService } from '../services/gameService'
 import { storageService } from '../services/storageService'
 import { useAuth } from '../context/AuthContext'
+import { ROUTES } from '../constants/routes'
+import { MESSAGES } from '../constants/messages'
+import { getErrorMessage } from '../utils/errorMessages'
 import Layout from '../components/Layout'
 import GameForm from '../components/GameForm'
 
 export default function PostPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
-  const [submitError, setSubmitError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   async function handleSubmit({ form, thumbnailFile }) {
+    if (isSubmitting) return
     if (!user || (!user.id && !user.uid)) {
-      setSubmitError('ログインセッションが有効ではありません。')
+      setErrorMessage(MESSAGES.ERROR.UNAUTHORIZED)
       return
     }
     
     const userId = user.id || user.uid
-
-    setLoading(true)
-    setSubmitError('')
+    setIsSubmitting(true)
+    setErrorMessage('')
     
     try {
       let thumbnailUrl = null
-      
       if (thumbnailFile) {
         thumbnailUrl = await storageService.uploadThumbnail(thumbnailFile, userId)
       }
@@ -36,12 +38,12 @@ export default function PostPage() {
         thumbnailUrl: thumbnailUrl
       })
 
-      navigate('/mypage')
+      navigate(ROUTES.MYPAGE)
     } catch (err) {
       console.error('Game Post Error:', err)
-      setSubmitError(err.message || '投稿に失敗しました。もう一度お試しください。')
+      setErrorMessage(getErrorMessage(err, MESSAGES.ERROR.POST))
     } finally {
-      setLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -51,13 +53,13 @@ export default function PostPage() {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">ゲームを投稿する</h1>
         <p className="text-sm text-gray-500 mb-8">あなたのゲームをみんなに紹介しましょう</p>
 
-        {submitError && (
+        {errorMessage && (
           <div className="mb-4 px-4 py-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 whitespace-pre-wrap">
-            {submitError}
+            {errorMessage}
           </div>
         )}
 
-        <GameForm onSubmit={handleSubmit} submitLabel="投稿する" loading={loading} />
+        <GameForm onSubmit={handleSubmit} submitLabel="投稿する" isSubmitting={isSubmitting} />
       </div>
     </Layout>
   )

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { gameService } from '../services/gameService'
+import { ROUTES } from '../constants/routes'
 import Layout from '../components/Layout'
 
 function formatDate(isoString) {
@@ -49,7 +50,7 @@ export default function GameDetailPage() {
       <Layout>
         <div className="text-center py-20 bg-gray-50 rounded-2xl border border-gray-200">
           <h2 className="text-xl font-bold text-gray-700 mb-2">{error || 'Game Not Found'}</h2>
-          <Link to="/" className="text-blue-500 hover:underline">トップページに戻る</Link>
+          <Link to={ROUTES.HOME} className="text-blue-500 hover:underline">トップページに戻る</Link>
         </div>
       </Layout>
     )
