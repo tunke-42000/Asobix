@@ -7,7 +7,8 @@ export const authService = {
       email, 
       password,
       options: {
-        data: { username }
+        data: { username },
+        emailRedirectTo: `${window.location.origin}/welcome`
       }
     })
     if (error) throw error

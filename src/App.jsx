@@ -6,6 +6,7 @@ import TopPage from './pages/TopPage'
 import GameDetailPage from './pages/GameDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import WelcomePage from './pages/WelcomePage'
 import PostPage from './pages/PostPage'
 import EditPage from './pages/EditPage'
 import MyPage from './pages/MyPage'
@@ -21,6 +22,7 @@ export default function App() {
           <Route path={ROUTES.GAME_DETAIL_ROUTE} element={<GameDetailPage />} />
           <Route path={ROUTES.LOGIN} element={<LoginPage />} />
           <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+          <Route path={ROUTES.WELCOME} element={<WelcomePage />} />
           
           <Route path={ROUTES.POST} element={
             <ProtectedRoute>

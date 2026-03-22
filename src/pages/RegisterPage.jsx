@@ -54,9 +54,10 @@ export default function RegisterPage() {
             <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
               ✨
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">{MESSAGES.SUCCESS.REGISTER}</h2>
-            <p className="text-gray-600 mb-8 text-sm">
-              （※メール認証が有効な場合は、届いたメールのリンクをクリックしてください）
+            <h2 className="text-xl font-bold text-gray-900 mb-4">確認メールを送信しました</h2>
+            <p className="text-gray-600 mb-8 text-sm leading-relaxed">
+              ご登録いただいたメールアドレスに確認メールを送信しました。<br />
+              メール内のリンクをクリックして登録を完了してください。
             </p>
             <Link
               to={ROUTES.LOGIN}
