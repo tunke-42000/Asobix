@@ -25,7 +25,8 @@ export default function LoginPage() {
       await signIn(form.email, form.password)
       navigate('/mypage')
     } catch (err) {
-      setError('メールアドレスまたはパスワードが正しくありません')
+      console.error("Supabase login error:", err)
+      setError(err.message || 'メールアドレスまたはパスワードが正しくありません')
     } finally {
       setLoading(false)
     }

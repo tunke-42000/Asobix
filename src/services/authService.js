@@ -19,7 +19,17 @@ export const authService = {
   },
   
   async login(email, password) {
+    console.log("login payload", {
+      email,
+      passwordLength: password?.length,
+      hasEmail: !!email,
+      hasPassword: !!password,
+    })
+
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    
+    console.log("login result", { data, error })
+
     if (error) throw error
     return data.user
   },
