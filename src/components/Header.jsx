@@ -1,14 +1,22 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Header() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   async function handleSignOut() {
     await signOut()
     navigate('/')
   }
+
+  const getLinkClass = (path) => {
+    const isActive = location.pathname === path;
+    return isActive
+      ? "px-4 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-xl hover:bg-blue-600 transition-colors"
+      : "px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors";
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
@@ -19,24 +27,24 @@ export default function Header() {
         </Link>
 
         {/* Nav */}
-        <nav className="flex items-center gap-3">
+        <nav className="flex items-center gap-1">
           {user ? (
             <>
               <Link
                 to="/post"
-                className="px-4 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-xl hover:bg-blue-600 transition-colors"
+                className={getLinkClass('/post')}
               >
                 投稿する
               </Link>
               <Link
                 to="/mypage"
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                className={getLinkClass('/mypage')}
               >
                 マイページ
               </Link>
               <button
                 onClick={handleSignOut}
-                className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                className="px-4 py-1.5 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors"
               >
                 ログアウト
               </button>
@@ -45,7 +53,7 @@ export default function Header() {
             <>
               <Link
                 to="/login"
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                className="px-4 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
               >
                 ログイン
               </Link>
