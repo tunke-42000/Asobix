@@ -10,35 +10,15 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // 1. セッション初期化と認証状態リスナー (onAuthStateChange内で非同期処理を行わない)
   useEffect(() => {
     let mounted = true
-
-    // ログイン後 または セッション復旧時にプロフィールが存在しなければ自動作成する
-    const loadProfile = async (sessionUser) => {
-      try {
-        let prof = await profileService.getProfile(sessionUser.id)
-        if (!prof) {
-          // authService.register 時に設定した user_metadata.username を使用
-          const username = sessionUser.user_metadata?.username || sessionUser.email?.split('@')[0] || 'User'
-          await profileService.upsertProfile(sessionUser.id, username)
-          prof = await profileService.getProfile(sessionUser.id)
-        }
-        return prof
-      } catch (err) {
-        console.error('Error loading/creating profile:', err)
-        return null
-      }
-    }
 
     const initSession = async () => {
       try {
         const session = await authService.getCurrentSession()
         if (mounted) {
           setUser(session?.user || null)
-          if (session?.user) {
-            const prof = await loadProfile(session.user)
-            if (mounted) setProfile(prof || null)
-          }
         }
       } catch (e) {
         console.error('Session init error:', e)
@@ -49,18 +29,11 @@ export function AuthProvider({ children }) {
 
     initSession()
 
-    // Listen to token refresh or auth sign in/out
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // 認証状態の変更検知 (asyncは使わず、即座にstate更新のみ行いAuth Token Lockを回避する)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return
-      
       setUser(session?.user || null)
-      if (session?.user) {
-        const prof = await loadProfile(session.user)
-        if (mounted) setProfile(prof || null)
-      } else {
-        if (mounted) setProfile(null)
-      }
-      if (mounted) setLoading(false)
+      setLoading(false)
     })
 
     return () => {
@@ -68,6 +41,38 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe()
     }
   }, [])
+
+  // 2. Userの変更を検知してプロフィールを取得・自動作成する (分離・遅延実行)
+  useEffect(() => {
+    let mounted = true
+
+    const loadProfile = async (sessionUser) => {
+      try {
+        let prof = await profileService.getProfile(sessionUser.id)
+        if (!prof) {
+          // If profile doesn't exist, create it automatically
+          const username = sessionUser.user_metadata?.username || sessionUser.email?.split('@')[0] || 'User'
+          await profileService.upsertProfile(sessionUser.id, username)
+          prof = await profileService.getProfile(sessionUser.id)
+        }
+        if (mounted) setProfile(prof || null)
+      } catch (err) {
+        console.error('Error loading/creating profile:', err)
+        // Profile取得に失敗してもアプリがクラッシュしないよう、nullにフォールバック
+        if (mounted) setProfile(null)
+      }
+    }
+
+    if (user) {
+      loadProfile(user)
+    } else {
+      setProfile(null) // ログアウト時等
+    }
+
+    return () => {
+      mounted = false
+    }
+  }, [user])
 
   async function signUp(email, password, username) {
     return await authService.register(email, password, username)
@@ -79,6 +84,8 @@ export function AuthProvider({ children }) {
 
   async function signOut() {
     await authService.logout()
+    setUser(null)
+    setProfile(null)
   }
 
   const value = {

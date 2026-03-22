@@ -7,11 +7,11 @@ export const profileService = {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single()
+      .maybeSingle() // 406エラーを防ぎ、存在しない場合は単にnullを返す
       
     if (error) {
-      if (error.code === 'PGRST116') return null // Not found
-      throw error
+      console.error("profileService.getProfile error:", error)
+      return null // アプリクラッシュを防ぐため無理にthrowしない
     }
     return data
   },
@@ -26,6 +26,9 @@ export const profileService = {
         updated_at: new Date().toISOString()
       })
       
-    if (error) throw error
+    if (error) {
+      console.error("profileService.upsertProfile error:", error)
+      throw error
+    }
   }
 }
