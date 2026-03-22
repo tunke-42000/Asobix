@@ -1,16 +1,21 @@
 import { supabase } from '../lib/supabase'
-import { profileService } from './profileService'
 
 export const authService = {
   async register(email, password, username) {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    // Save username into user_metadata so AuthContext can auto-create the profile later
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: { username }
+      }
+    })
     if (error) throw error
     
-    const user = data.user ?? data.session?.user
-    if (user) {
-      await profileService.upsertProfile(user.id, username)
-    }
-    return user
+    // サインアップ直後の profiles への insert は削除（RLSポリシーにより違反となるため）
+    // 自動作成は AuthContext 側のセッション読み込み時に遅延実行する
+    
+    return data.user ?? data.session?.user
   },
   
   async login(email, password) {

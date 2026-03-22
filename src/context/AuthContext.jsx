@@ -13,13 +13,30 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true
 
+    // ログイン後 または セッション復旧時にプロフィールが存在しなければ自動作成する
+    const loadProfile = async (sessionUser) => {
+      try {
+        let prof = await profileService.getProfile(sessionUser.id)
+        if (!prof) {
+          // authService.register 時に設定した user_metadata.username を使用
+          const username = sessionUser.user_metadata?.username || sessionUser.email?.split('@')[0] || 'User'
+          await profileService.upsertProfile(sessionUser.id, username)
+          prof = await profileService.getProfile(sessionUser.id)
+        }
+        return prof
+      } catch (err) {
+        console.error('Error loading/creating profile:', err)
+        return null
+      }
+    }
+
     const initSession = async () => {
       try {
         const session = await authService.getCurrentSession()
         if (mounted) {
           setUser(session?.user || null)
           if (session?.user) {
-            const prof = await profileService.getProfile(session.user.id)
+            const prof = await loadProfile(session.user)
             if (mounted) setProfile(prof || null)
           }
         }
@@ -38,7 +55,7 @@ export function AuthProvider({ children }) {
       
       setUser(session?.user || null)
       if (session?.user) {
-        const prof = await profileService.getProfile(session.user.id)
+        const prof = await loadProfile(session.user)
         if (mounted) setProfile(prof || null)
       } else {
         if (mounted) setProfile(null)
